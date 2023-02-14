@@ -4,7 +4,7 @@ import { PLYLoader } from 'three-stdlib'
 import { hookWow } from '@/store/store'
 import nProgress, { done } from 'nprogress'
 import { BufferAttribute, BufferGeometry, MeshBasicMaterial, Object3D, Points } from 'three'
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
@@ -284,11 +284,24 @@ void main() {
           <points geometry={geo} material={meshBasic}></points>
         </group>
 
-        <OrbitControls object-position={[5, 2.5, -5]} target={[0, 0, 0]}></OrbitControls>
+        <Log></Log>
+        <PerspectiveCamera fov={30} makeDefault></PerspectiveCamera>
+        <OrbitControls
+          object-position={[12.296360858145912, 7.602888282754072, -2.5408114197708045]}
+          object-quaternion={[-0.15018883631347407, 0.7605195283570814, 0.18954838335570479, 0.6025983494846013]}
+          target={[0, 0, 0]}></OrbitControls>
         {/* <Logo scale={0.5} route='/blob' position-y={-1} /> */}
       </group>
     </>
   )
+}
+function Log() {
+  useFrame((st) => {
+    console.log(st.camera.position.toArray(), 'pos')
+    console.log(st.camera.quaternion.toArray(), 'quaternion')
+  })
+
+  return null
 }
 
 export async function getStaticProps() {
