@@ -201,7 +201,7 @@ void main() {
   }
 
   gl_Position.y += sin(dist / 10.0 * 3.141592 * 2.0 + time) * 0.3;
-  gl_PointSize = ${(devicePixelRatio || 1.0).toFixed(1)};
+  gl_PointSize = 1.0;
 }
 
 `
