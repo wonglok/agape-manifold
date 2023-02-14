@@ -284,7 +284,7 @@ void main() {
           <points geometry={geo} material={meshBasic}></points>
         </group>
 
-        <OrbitControls></OrbitControls>
+        <OrbitControls object-position={[5, 2.5, -5]} target={[0, 0, 0]}></OrbitControls>
         {/* <Logo scale={0.5} route='/blob' position-y={-1} /> */}
       </group>
     </>
