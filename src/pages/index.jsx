@@ -96,7 +96,13 @@ void main() {
 	#include <fog_vertex>
 
   float dist = length(gl_Position.xyz - cameraPosition.xyz);
-  gl_PointSize = 1.0 + 0.5 * sin(dist + time * 3.0);
+
+  if (dist >= 4.0) {
+    dist = 4.0;
+  }
+
+  gl_Position.y += sin(dist / 4.0 * 3.141592 * 2.0 + time) * 1.0;
+  gl_PointSize = ${(devicePixelRatio || 1.0).toFixed(1)};
 }
 
 `
