@@ -65,7 +65,7 @@ export default function Page(props) {
     anime({
       targets: [v],
       current: 10,
-      duration: 5500,
+      duration: 6500,
       easing: 'linear',
       update: () => {
         surge.current = v.current
@@ -258,10 +258,10 @@ void main() {
 	#include <fog_vertex>
 
 
-  float dist = length(transformed.xz);
+  float dist = length(transformed.xyz);
 
   if (surge <= dist) {
-    gl_Position.y += 20.0 * (length(dist - surge));
+    gl_Position.y += 8.0 * (length(dist - surge));
   }
 
   gl_PointSize = 1.0;
