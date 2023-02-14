@@ -5,6 +5,7 @@ import { hookWow } from '@/store/store'
 import nProgress from 'nprogress'
 import { MeshBasicMaterial, Object3D, Points } from 'three'
 import { OrbitControls } from '@react-three/drei'
+import { useFrame } from '@react-three/fiber'
 // Dynamic import is used to prevent a payload when the website starts, that includes threejs, r3f etc..
 // WARNING ! errors might get obfuscated by using dynamic import.
 // If something goes wrong go back to a static import to show the error.
@@ -14,10 +15,11 @@ const Logo = dynamic(() => import('@/components/canvas/Logo'), { ssr: false })
 // Dom components go here
 export default function Page(props) {
   let ply = hookWow((s) => s.ply)
+
   // let progress = useWow((s) => s.progress)
   return (
     <>
-      {!ply && (
+      {(!ply || true) && (
         <Instructions>
           {
             <button
@@ -45,6 +47,61 @@ export default function Page(props) {
                         let meshBasic = new MeshBasicMaterial({
                           vertexColors: true,
                         })
+
+                        meshBasic.onBeforeCompile = (shader) => {
+                          shader.uniforms.time = { value: 0 }
+                          let works = () => {
+                            shader.uniforms.time.value = window.performance.now() / 1000
+                          }
+
+                          let rAFID = 0
+                          let rAF = () => {
+                            rAFID = requestAnimationFrame(rAF)
+                            works()
+                          }
+                          rAFID = requestAnimationFrame(rAF)
+
+                          shader.vertexShader = /* glsl */ `
+#include <common>
+#include <uv_pars_vertex>
+#include <uv2_pars_vertex>
+#include <envmap_pars_vertex>
+#include <color_pars_vertex>
+#include <fog_pars_vertex>
+#include <morphtarget_pars_vertex>
+#include <skinning_pars_vertex>
+#include <logdepthbuf_pars_vertex>
+#include <clipping_planes_pars_vertex>
+uniform float time;
+void main() {
+	#include <uv_vertex>
+	#include <uv2_vertex>
+	#include <color_vertex>
+	#include <morphcolor_vertex>
+	#if defined ( USE_ENVMAP ) || defined ( USE_SKINNING )
+		#include <beginnormal_vertex>
+		#include <morphnormal_vertex>
+		#include <skinbase_vertex>
+		#include <skinnormal_vertex>
+		#include <defaultnormal_vertex>
+	#endif
+	#include <begin_vertex>
+	#include <morphtarget_vertex>
+	#include <skinning_vertex>
+	#include <project_vertex>
+	#include <logdepthbuf_vertex>
+	#include <clipping_planes_vertex>
+	#include <worldpos_vertex>
+	#include <envmap_vertex>
+	#include <fog_vertex>
+
+  float dist = length(gl_Position.xyz - cameraPosition.xyz);
+  gl_PointSize = 1.0 + 0.5 * sin(dist + time * 3.0);
+}
+
+`
+                        }
+
                         let mesh = new Points(ply, meshBasic)
                         mesh.rotation.x = Math.PI * -0.5
                         o3d.add(mesh)
