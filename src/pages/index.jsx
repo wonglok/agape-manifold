@@ -6,14 +6,17 @@ import nProgress, { done } from 'nprogress'
 import { BufferAttribute, BufferGeometry, MeshBasicMaterial, Object3D, Points } from 'three'
 import { OrbitControls } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useEffect } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 import { PLYExporter } from 'three/examples/jsm/exporters/PLYExporter'
+import anime from 'animejs'
+
 // Dynamic import is used to prevent a payload when the website starts, that includes threejs, r3f etc..
 // WARNING ! errors might get obfuscated by using dynamic import.
 // If something goes wrong go back to a static import to show the error.
 // https://github.com/pmndrs/react-three-next/issues/49
 const Logo = dynamic(() => import('@/components/canvas/Logo'), { ssr: false })
+let surge = { current: 0 }
 
 // Dom components go here
 export default function Page(props) {
@@ -30,7 +33,7 @@ export default function Page(props) {
 
     for (let i = 0; i < count; i++) {
       //
-      if (i % 3 === 0) {
+      if (i % 2 === 0) {
         arrPos.push(
           //
           cloned.attributes.position.getX(i),
@@ -54,6 +57,22 @@ export default function Page(props) {
     return buff
   }
 
+  let onSurge = () => {
+    //
+    surge.current = 0
+
+    let v = { current: 0 }
+    anime({
+      targets: [v],
+      current: 10,
+      duration: 5500,
+      easing: 'linear',
+      update: () => {
+        surge.current = v.current
+      },
+      loop: true,
+    })
+  }
   // let progress = useWow((s) => s.progress)
   return (
     <>
@@ -141,77 +160,11 @@ export default function Page(props) {
                     .then((ply) => {
                       //
 
-                      let o3d = new Object3D()
+                      ply.rotateX(-Math.PI * 0.5)
 
-                      let meshBasic = new MeshBasicMaterial({
-                        vertexColors: true,
-                      })
-
-                      meshBasic.onBeforeCompile = (shader) => {
-                        shader.uniforms.time = { value: 0 }
-                        let works = () => {
-                          shader.uniforms.time.value = window.performance.now() / 1000
-                        }
-
-                        let rAFID = 0
-                        let rAF = () => {
-                          rAFID = requestAnimationFrame(rAF)
-                          works()
-                        }
-                        rAFID = requestAnimationFrame(rAF)
-
-                        shader.vertexShader = /* glsl */ `
-#include <common>
-#include <uv_pars_vertex>
-#include <uv2_pars_vertex>
-#include <envmap_pars_vertex>
-#include <color_pars_vertex>
-#include <fog_pars_vertex>
-#include <morphtarget_pars_vertex>
-#include <skinning_pars_vertex>
-#include <logdepthbuf_pars_vertex>
-#include <clipping_planes_pars_vertex>
-uniform float time;
-void main() {
-	#include <uv_vertex>
-	#include <uv2_vertex>
-	#include <color_vertex>
-	#include <morphcolor_vertex>
-	#if defined ( USE_ENVMAP ) || defined ( USE_SKINNING )
-		#include <beginnormal_vertex>
-		#include <morphnormal_vertex>
-		#include <skinbase_vertex>
-		#include <skinnormal_vertex>
-		#include <defaultnormal_vertex>
-	#endif
-	#include <begin_vertex>
-	#include <morphtarget_vertex>
-	#include <skinning_vertex>
-	#include <project_vertex>
-	#include <logdepthbuf_vertex>
-	#include <clipping_planes_vertex>
-	#include <worldpos_vertex>
-	#include <envmap_vertex>
-	#include <fog_vertex>
-
-  float dist = length(gl_Position.xyz - cameraPosition.xyz);
-
-  if (dist >= 10.0) {
-    dist = 10.0;
-  }
-
-  gl_Position.y += sin(dist / 10.0 * 3.141592 * 2.0 + time) * 0.3;
-  gl_PointSize = 1.0;
-}
-
-`
-                      }
-
-                      let mesh = new Points(ply, meshBasic)
-                      mesh.rotation.x = Math.PI * -0.5
-                      o3d.add(mesh)
-                      hookWow.setState({ ply: <primitive object={o3d}></primitive> })
+                      hookWow.setState({ geo: ply })
                       nProgress.done()
+                      onSurge()
                     })
                   //
                 }
@@ -220,6 +173,17 @@ void main() {
             }}>
             Run PLY File
           </button>
+
+          {/*
+          {ply && (
+            <button
+              className='p-3 text-white bg-green-500 rounded-xl'
+              onClick={() => {
+                onSurge()
+              }}>
+              Pulse Animation
+            </button>
+          )} */}
         </Instructions>
       )}
     </>
@@ -233,10 +197,93 @@ void main() {
 // It will receive same props as the Page component (from getStaticProps, etc.)
 Page.canvas = (props) => {
   let ply = hookWow((s) => s.ply)
+
+  let geo = hookWow((s) => s.geo)
+
+  let meshBasic = new MeshBasicMaterial({
+    vertexColors: true,
+  })
+
+  meshBasic.onBeforeCompile = (shader) => {
+    shader.uniforms.time = { value: 0 }
+    shader.uniforms.surge = { value: 0 }
+    let works = () => {
+      shader.uniforms.surge.value = surge.current
+      shader.uniforms.time.value = window.performance.now() / 1000
+    }
+
+    let rAFID = 0
+    let rAF = () => {
+      rAFID = requestAnimationFrame(rAF)
+      works()
+    }
+    rAFID = requestAnimationFrame(rAF)
+
+    shader.vertexShader = /* glsl */ `
+#include <common>
+#include <uv_pars_vertex>
+#include <uv2_pars_vertex>
+#include <envmap_pars_vertex>
+#include <color_pars_vertex>
+#include <fog_pars_vertex>
+#include <morphtarget_pars_vertex>
+#include <skinning_pars_vertex>
+#include <logdepthbuf_pars_vertex>
+#include <clipping_planes_pars_vertex>
+uniform float time;
+uniform float surge;
+void main() {
+	#include <uv_vertex>
+	#include <uv2_vertex>
+	#include <color_vertex>
+	#include <morphcolor_vertex>
+	#if defined ( USE_ENVMAP ) || defined ( USE_SKINNING )
+		#include <beginnormal_vertex>
+		#include <morphnormal_vertex>
+		#include <skinbase_vertex>
+		#include <skinnormal_vertex>
+		#include <defaultnormal_vertex>
+	#endif
+	// #include <begin_vertex>
+  vec3 transformed = vec3( position );
+
+
+	#include <morphtarget_vertex>
+	#include <skinning_vertex>
+	#include <project_vertex>
+	#include <logdepthbuf_vertex>
+	#include <clipping_planes_vertex>
+	#include <worldpos_vertex>
+	#include <envmap_vertex>
+	#include <fog_vertex>
+
+
+  float dist = length(transformed.xz);
+
+  if (surge <= dist) {
+    gl_Position.y += 20.0 * (length(dist - surge));
+  }
+
+  gl_PointSize = 1.0;
+
+}
+
+`
+  }
+
+  meshBasic.customProgramCacheKey = () => {
+    return Math.random()
+  }
+
   return (
     <>
       <group>
         {ply}
+
+        <group rotation={[0.0, 0.0, 0.0]}>
+          <points geometry={geo} material={meshBasic}></points>
+        </group>
+
         <OrbitControls></OrbitControls>
         {/* <Logo scale={0.5} route='/blob' position-y={-1} /> */}
       </group>
