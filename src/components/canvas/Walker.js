@@ -59,6 +59,9 @@ export function Walker({ initPos = [1, 0, -1] }) {
     }
   }, [shouldRun])
 
+  avaGLB.scene.traverse((it) => {
+    it.frustumCulled = false
+  })
   useFrame(({ controls }, dt) => {
     if (controls) {
       if (
@@ -114,7 +117,8 @@ export function Walker({ initPos = [1, 0, -1] }) {
   useEffect(() => {
     player.position.fromArray(initPos)
     camera.position.fromArray(initPos)
-    camera.position.z += 1
+    camera.position.z += 3.5
+    camera.position.y += 0.5
   }, [camera.position, initPos, player.position])
 
   let up = new Vector3(0, 1, 0)
