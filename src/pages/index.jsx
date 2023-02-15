@@ -164,6 +164,7 @@ function Building() {
 
   let meshBasic = new MeshBasicMaterial({
     vertexColors: true,
+    transparent: true,
   })
 
   meshBasic.onBeforeCompile = (shader) => {
@@ -227,7 +228,6 @@ void main() {
   }
 
   gl_PointSize = 1.0;
-
 }
 
 `
