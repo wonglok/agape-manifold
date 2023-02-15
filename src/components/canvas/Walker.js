@@ -250,7 +250,7 @@ export function Walker({ initPos = [1, 0, -1] }) {
           })
         })
       })
-  }, [])
+  }, [core, self.keyState])
 
   let tempVector = new Vector3()
   let upVector = new Vector3(0, 1, 0)
