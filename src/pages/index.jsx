@@ -245,7 +245,7 @@ void main() {
       <group>
         {/* {ply} */}
 
-        <group position={[1.0, -0.1, 0]} scale={1.3} rotation={[0, 0, 0.05]}>
+        <group position={[1.0, -0.1, 0]} scale={1.35} rotation={[0, 0, 0.05]}>
           <points geometry={defaultGeo} material={meshBasic}></points>
         </group>
 
