@@ -73,7 +73,9 @@ export function Walker({ initPos = [1, 0, -1] }) {
       ) {
         //
 
-        if (ControlState.keyForward) {
+        if (self.keyState.joyStickDown) {
+          //.
+        } else if (ControlState.keyForward) {
           avaGLB.scene.rotation.y = MathUtils.damp(
             avaGLB.scene.rotation.y,
             controls.getAzimuthalAngle() + Math.PI,
@@ -117,7 +119,7 @@ export function Walker({ initPos = [1, 0, -1] }) {
   useEffect(() => {
     player.position.fromArray(initPos)
     camera.position.fromArray(initPos)
-    camera.position.z += 3.5
+    camera.position.z += 0.5
     camera.position.y += 0.5
   }, [camera.position, initPos, player.position])
 
@@ -256,6 +258,7 @@ export function Walker({ initPos = [1, 0, -1] }) {
         dynamic.on('added', (evt, nipple) => {
           dynamic.on('start move end dir plain', (evta, data) => {
             if (evta.type === 'start') {
+              setAct(actRun)
               self.keyState.joyStickDown = true
             }
 
@@ -322,10 +325,12 @@ export function Walker({ initPos = [1, 0, -1] }) {
               }
 
               //
-              // self.keyState.joyStickAngle = data.angle.radian + Math.PI * 1.5
+              self.keyState.joyStickAngle = data.angle.radian + Math.PI * 1.5
             }
 
             if (evta.type === 'end') {
+              setAct(actIdle)
+
               self.keyState.joyStickDown = false
             }
           })
@@ -368,6 +373,7 @@ export function Walker({ initPos = [1, 0, -1] }) {
       camera.position.y = y
 
       player.position.addScaledVector(tempVector, playerSpeed * delta * self.keyState.joyStickPressure * 0.75)
+      avaGLB.scene.rotation.y = self.keyState.joyStickAngle + Math.PI + controls.getAzimuthalAngle()
     }
   })
 
