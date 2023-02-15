@@ -8,8 +8,7 @@ import { useEffect, useMemo, useRef } from 'react'
 // import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 import { PLYExporter } from 'three/examples/jsm/exporters/PLYExporter'
 import anime from 'animejs'
-import { Gesture } from '@use-gesture/vanilla'
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
+import { Loader } from '@react-three/drei'
 import { Walker } from '@/components/canvas/Walker'
 import Scene from '@/components/canvas/Scene'
 
@@ -21,49 +20,49 @@ import Scene from '@/components/canvas/Scene'
 
 // Dom components go here
 export default function Page(props) {
-  let ply = hookWow((s) => s.ply)
+  // let ply = hookWow((s) => s.ply)
 
-  let getNewPLY = (plyGeo) => {
-    /** @type {BufferGeometry} */
-    let cloned = plyGeo
+  // let getNewPLY = (plyGeo) => {
+  //   /** @type {BufferGeometry} */
+  //   let cloned = plyGeo
 
-    let arrPos = []
-    let arrCol = []
-    let arrIndex = []
-    let count = cloned.attributes.position.count
+  //   let arrPos = []
+  //   let arrCol = []
+  //   let arrIndex = []
+  //   let count = cloned.attributes.position.count
 
-    for (let i = 0; i < count; i++) {
-      //
-      if (i % 2 === 0) {
-        arrPos.push(
-          //
-          cloned.attributes.position.getX(i),
-          cloned.attributes.position.getY(i),
-          cloned.attributes.position.getZ(i),
-        )
-        arrCol.push(
-          //
-          cloned.attributes.color.getX(i),
-          cloned.attributes.color.getY(i),
-          cloned.attributes.color.getZ(i),
-        )
-        arrIndex.push(i / count)
-      }
-      //
-    }
+  //   for (let i = 0; i < count; i++) {
+  //     //
+  //     if (i % 2 === 0) {
+  //       arrPos.push(
+  //         //
+  //         cloned.attributes.position.getX(i),
+  //         cloned.attributes.position.getY(i),
+  //         cloned.attributes.position.getZ(i),
+  //       )
+  //       arrCol.push(
+  //         //
+  //         cloned.attributes.color.getX(i),
+  //         cloned.attributes.color.getY(i),
+  //         cloned.attributes.color.getZ(i),
+  //       )
+  //       arrIndex.push(i / count)
+  //     }
+  //     //
+  //   }
 
-    let buff = new BufferGeometry()
-    buff.setAttribute('position', new BufferAttribute(new Float32Array(arrPos), 3))
-    buff.setAttribute('ptIndex', new BufferAttribute(new Float32Array(arrIndex), 1))
-    buff.setAttribute('color', new BufferAttribute(new Float32Array(arrCol), 3))
+  //   let buff = new BufferGeometry()
+  //   buff.setAttribute('position', new BufferAttribute(new Float32Array(arrPos), 3))
+  //   buff.setAttribute('ptIndex', new BufferAttribute(new Float32Array(arrIndex), 1))
+  //   buff.setAttribute('color', new BufferAttribute(new Float32Array(arrCol), 3))
 
-    return buff
-  }
+  //   return buff
+  // }
 
   // let progress = useWow((s) => s.progress)
   return (
     <>
-      {(!ply || true) && (
+      {/* {(!ply || true) && (
         <>
           <button
             className='p-3 px-5 mx-3 text-white bg-blue-500 rounded-lg'
@@ -100,7 +99,10 @@ export default function Page(props) {
             Run PLY File
           </button>
 
-          {/*
+
+        </>
+      )} */}
+      {/*
           {ply && (
             <button
               className='p-3 text-white bg-green-500 rounded-xl'
@@ -110,8 +112,9 @@ export default function Page(props) {
               Pulse Animation
             </button>
           )} */}
-        </>
-      )}
+
+      <div id='avacontrols'></div>
+      <Loader></Loader>
 
       <Scene>
         <Walker initPos={[5.3280000000447, 2.1, 5]}></Walker>
