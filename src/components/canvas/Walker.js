@@ -1,10 +1,108 @@
 import { createPortal, useFrame, useLoader, useThree } from '@react-three/fiber'
-import { useEffect, useMemo, useRef } from 'react'
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
-import { Object3D, Vector3 } from 'three'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Box, Environment, OrbitControls, PerspectiveCamera, RoundedBox, useFBX, useGLTF } from '@react-three/drei'
+import { AnimationMixer, MathUtils, Object3D, Vector3 } from 'three'
 import { useCore } from './useCore'
 
 export function Walker({ initPos = [1, 0, -1] }) {
+  let avaGLB = useGLTF(`/assets/2022-02-15/black-t-shirt.glb`)
+
+  let {
+    animations: [running],
+  } = useFBX(`/assets/2022-02-15/rpm-locomotion/running.fbx`)
+  let {
+    animations: [idle],
+  } = useFBX(`/assets/2022-02-15/rpm-locomotion/standing.fbx`)
+
+  let self = useMemo(() => {
+    return {
+      keyState: {
+        fwdPressed: false,
+        bkdPressed: false,
+        lftPressed: false,
+        rgtPressed: false,
+        joyStickDown: false,
+        joyStickAngle: 0,
+        joyStickPressure: 0,
+        joyStickSide: 0,
+      },
+    }
+  }, [])
+  let ControlState = useMemo(() => {
+    return {
+      keyForward: false,
+      keyBackward: false,
+      keyLeft: false,
+      keyRight: false,
+    }
+  }, [])
+
+  let mixer = useMemo(() => {
+    return new AnimationMixer(avaGLB.scene)
+  }, [avaGLB])
+  useFrame((r, dt) => {
+    mixer.update(dt)
+  })
+  let actRun = mixer.clipAction(running)
+  let actIdle = mixer.clipAction(idle)
+  let [shouldRun, setAct] = useState(actIdle)
+
+  useEffect(() => {
+    actIdle.play()
+  }, [actIdle])
+  let last = useRef(actIdle)
+  useEffect(() => {
+    shouldRun?.reset()?.play()
+    last.current = shouldRun
+    return () => {
+      last?.current?.reset()?.fadeOut(0.2)
+    }
+  }, [shouldRun])
+
+  useFrame(({ controls }, dt) => {
+    if (controls) {
+      if (
+        self.keyState.joyStickDown ||
+        ControlState.keyForward ||
+        ControlState.keyBackward ||
+        ControlState.keyLeft ||
+        ControlState.keyRight
+      ) {
+        //
+
+        if (ControlState.keyForward) {
+          avaGLB.scene.rotation.y = MathUtils.damp(
+            avaGLB.scene.rotation.y,
+            controls.getAzimuthalAngle() + Math.PI,
+            1,
+            dt * 10,
+          )
+        } else if (ControlState.keyBackward) {
+          avaGLB.scene.rotation.y = MathUtils.damp(
+            avaGLB.scene.rotation.y,
+            controls.getAzimuthalAngle() + Math.PI + Math.PI,
+            1,
+            dt * 10,
+          )
+        } else if (ControlState.keyLeft) {
+          avaGLB.scene.rotation.y = MathUtils.damp(
+            avaGLB.scene.rotation.y,
+            controls.getAzimuthalAngle() + Math.PI + Math.PI * 0.5,
+            1,
+            dt * 10,
+          )
+        } else if (ControlState.keyRight) {
+          avaGLB.scene.rotation.y = MathUtils.damp(
+            avaGLB.scene.rotation.y,
+            controls.getAzimuthalAngle() + Math.PI + Math.PI * -0.5,
+            1,
+            dt * 10,
+          )
+        }
+      }
+    }
+  })
+  //
   let scene = useThree((s) => s.scene)
   let gl = useThree((s) => s.gl)
 
@@ -21,28 +119,23 @@ export function Walker({ initPos = [1, 0, -1] }) {
 
   let up = new Vector3(0, 1, 0)
 
-  let ControlState = useMemo(() => {
-    return {
-      keyForward: false,
-      keyBackward: false,
-      keyLeft: false,
-      keyRight: false,
-    }
-  }, [])
-
   useEffect(() => {
     let hh = ({ key }) => {
       if (key === 'w') {
         ControlState.keyForward = true
+        setAct(actRun)
       }
       if (key === 's') {
+        setAct(actRun)
         ControlState.keyBackward = true
       }
 
       if (key === 'a') {
+        setAct(actRun)
         ControlState.keyLeft = true
       }
       if (key === 'd') {
+        setAct(actRun)
         ControlState.keyRight = true
       }
     }
@@ -50,29 +143,33 @@ export function Walker({ initPos = [1, 0, -1] }) {
     return () => {
       window.removeEventListener('keydown', hh)
     }
-  }, [ControlState])
+  }, [ControlState, actRun, mixer])
 
   useEffect(() => {
     let hh = ({ key }) => {
       if (key === 'w') {
         ControlState.keyForward = false
+        setAct(actIdle)
       }
       if (key === 's') {
         ControlState.keyBackward = false
+        setAct(actIdle)
       }
 
       if (key === 'a') {
         ControlState.keyLeft = false
+        setAct(actIdle)
       }
       if (key === 'd') {
         ControlState.keyRight = false
+        setAct(actIdle)
       }
     }
     window.addEventListener('keyup', hh)
     return () => {
       window.removeEventListener('keyup', hh)
     }
-  }, [ControlState])
+  }, [ControlState, actIdle])
   useFrame((st, dt) => {
     if (st.controls) {
       if (ControlState.keyForward) {
@@ -109,20 +206,7 @@ export function Walker({ initPos = [1, 0, -1] }) {
       console.log(player.position.toArray())
     }
   })
-  let self = useMemo(() => {
-    return {
-      keyState: {
-        fwdPressed: false,
-        bkdPressed: false,
-        lftPressed: false,
-        rgtPressed: false,
-        joyStickDown: false,
-        joyStickAngle: 0,
-        joyStickPressure: 0,
-        joyStickSide: 0,
-      },
-    }
-  })
+
   useEffect(() => {
     import('nipplejs')
       .then((s) => {
@@ -293,7 +377,14 @@ export function Walker({ initPos = [1, 0, -1] }) {
         </>,
         scene,
       )}
-
+      {createPortal(
+        <group position={[0, -1.0, 0]}>
+          <primitive object={avaGLB.scene} />
+        </group>,
+        player,
+      )}
+      <Environment preset='apartment'></Environment>
+      <primitive object={player}></primitive>
       <OrbitControls makeDefault args={[camera, gl.domElement]} enableRotate={true}></OrbitControls>
     </>
   )
