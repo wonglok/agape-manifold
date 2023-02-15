@@ -2,21 +2,22 @@ import dynamic from 'next/dynamic'
 import Instructions from '@/components/dom/Instructions'
 import { PLYLoader } from 'three-stdlib'
 import { hookWow } from '@/store/store'
-import nProgress, { done } from 'nprogress'
-import { BufferAttribute, BufferGeometry, MeshBasicMaterial, Object3D, Points } from 'three'
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
-import { useFrame } from '@react-three/fiber'
+import { BufferAttribute, BufferGeometry, Color, MeshBasicMaterial, Object3D, Points, Quaternion, Vector3 } from 'three'
+import { createPortal, useFrame, useLoader, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
+// import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 import { PLYExporter } from 'three/examples/jsm/exporters/PLYExporter'
 import anime from 'animejs'
+import { Gesture } from '@use-gesture/vanilla'
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
+import { Walker } from '@/components/canvas/Walker'
+import Scene from '@/components/canvas/Scene'
 
 // Dynamic import is used to prevent a payload when the website starts, that includes threejs, r3f etc..
 // WARNING ! errors might get obfuscated by using dynamic import.
 // If something goes wrong go back to a static import to show the error.
 // https://github.com/pmndrs/react-three-next/issues/49
-const Logo = dynamic(() => import('@/components/canvas/Logo'), { ssr: false })
-let surge = { current: 0 }
+// const Logo = dynamic(() => import('@/components/canvas/Logo'), { ssr: false })
 
 // Dom components go here
 export default function Page(props) {
@@ -28,7 +29,7 @@ export default function Page(props) {
 
     let arrPos = []
     let arrCol = []
-
+    let arrIndex = []
     let count = cloned.attributes.position.count
 
     for (let i = 0; i < count; i++) {
@@ -46,99 +47,24 @@ export default function Page(props) {
           cloned.attributes.color.getY(i),
           cloned.attributes.color.getZ(i),
         )
+        arrIndex.push(i / count)
       }
       //
     }
 
     let buff = new BufferGeometry()
     buff.setAttribute('position', new BufferAttribute(new Float32Array(arrPos), 3))
+    buff.setAttribute('ptIndex', new BufferAttribute(new Float32Array(arrIndex), 1))
     buff.setAttribute('color', new BufferAttribute(new Float32Array(arrCol), 3))
 
     return buff
   }
 
-  let onSurge = () => {
-    //
-    surge.current = 0
-
-    let v = { current: 0 }
-    anime({
-      targets: [v],
-      current: 10,
-      duration: 6500,
-      easing: 'linear',
-      update: () => {
-        surge.current = v.current
-      },
-      loop: true,
-    })
-  }
   // let progress = useWow((s) => s.progress)
   return (
     <>
       {(!ply || true) && (
-        <Instructions>
-          <button
-            className='p-3 px-5 mx-3 text-white bg-blue-500 rounded-lg'
-            onClick={() => {
-              //
-              let input = document.createElement('input')
-              input.type = 'file'
-              input.onchange = (ev) => {
-                let first = ev.target?.files[0]
-
-                if (first) {
-                  let url = URL.createObjectURL(first)
-                  nProgress.start()
-                  let plyLoader = new PLYLoader()
-                  plyLoader
-                    .loadAsync(`${url}`, (ev) => {
-                      nProgress.set((ev.loaded / ev.total) * 0.8)
-                      // useWow.setState({ progress: ev.loaded / ev.total })
-                    })
-                    .then((ply) => {
-                      //
-
-                      ply = getNewPLY(ply)
-                      let o3d = new Object3D()
-
-                      let meshBasic = new MeshBasicMaterial({
-                        vertexColors: true,
-                      })
-
-                      let mesh = new Points(ply, meshBasic)
-                      mesh.rotation.x = Math.PI * -0.5
-                      o3d.add(mesh)
-                      hookWow.setState({ ply: <primitive object={o3d}></primitive> })
-
-                      let exporter = new PLYExporter()
-                      exporter.parse(
-                        mesh,
-                        (binary) => {
-                          console.log(binary)
-                          let blo = new Blob([binary], { type: '' })
-
-                          let url2 = URL.createObjectURL(blo)
-
-                          let an = document.createElement('a')
-                          an.href = url2
-                          an.download = 'reduced.glb'
-                          an.click()
-
-                          nProgress.done()
-                        },
-                        // () => {},
-                        { binary: true, excludeAttributes: ['normal'] },
-                      )
-                    })
-                  //
-                }
-              }
-              input.click()
-            }}>
-            Reduce PLY File
-          </button>
-
+        <>
           <button
             className='p-3 px-5 mx-3 text-white bg-blue-500 rounded-lg'
             onClick={() => {
@@ -184,21 +110,57 @@ export default function Page(props) {
               Pulse Animation
             </button>
           )} */}
-        </Instructions>
+        </>
       )}
+
+      <Scene>
+        <Walker initPos={[5.3280000000447, 2.1, 5]}></Walker>
+        <Building></Building>
+      </Scene>
     </>
   )
-}
+} //defaultGeo
 
-/*
-<Logo scale={0.5} route='/blob' position-y={-1} />
-*/
-// Canvas components go here
-// It will receive same props as the Page component (from getStaticProps, etc.)
-Page.canvas = (props) => {
-  let ply = hookWow((s) => s.ply)
+let surge = { current: 0 }
+function Building() {
+  let onSurge = () => {
+    //
+    surge.current = 0
 
-  let geo = hookWow((s) => s.geo)
+    let v = { current: 0 }
+
+    anime({
+      targets: [v],
+      current: 10,
+      duration: 5000,
+      easing: 'linear',
+      update: () => {
+        surge.current = v.current
+      },
+      // loop: true,
+    })
+  }
+
+  useEffect(() => {
+    onSurge()
+  }, [])
+
+  let defaultGeo = useLoader(PLYLoader, `/assets/2022-02-15/reduced.glb`)
+
+  defaultGeo = defaultGeo.clone()
+  defaultGeo.rotateX(Math.PI * -0.5)
+
+  let arrIndex = []
+
+  let count = defaultGeo.attributes.position.count
+  for (let i = 0; i < count; i++) {
+    arrIndex.push(i / count)
+  }
+  defaultGeo.setAttribute('ptIndex', new BufferAttribute(new Float32Array(arrIndex), 1))
+
+  // let ply = hookWow((s) => s.ply)
+
+  // let geo = hookWow((s) => s.geo)
 
   let meshBasic = new MeshBasicMaterial({
     vertexColors: true,
@@ -258,10 +220,10 @@ void main() {
 	#include <fog_vertex>
 
 
-  float dist = length(transformed.xyz);
+  float dist = length((transformed.xz));
 
   if (surge <= dist) {
-    gl_Position.y += 8.0 * (length(dist - surge));
+    gl_Position.y += 10.0 * (length(dist - surge));
   }
 
   gl_PointSize = 1.0;
@@ -275,26 +237,27 @@ void main() {
     return Math.random()
   }
 
+  let scene = useThree((s) => s.scene)
+  scene.background = new Color('#000000')
+
   return (
     <>
       <group>
-        {ply}
+        {/* {ply} */}
 
-        <group rotation={[0.0, 0.0, 0.0]}>
-          <points geometry={geo} material={meshBasic}></points>
+        <group position={[1.0, 0, 0]} rotation={[0, 0, 0.05]}>
+          <points geometry={defaultGeo} material={meshBasic}></points>
         </group>
 
-        <Log></Log>
-        <PerspectiveCamera fov={30} makeDefault></PerspectiveCamera>
-        <OrbitControls
-          object-position={[12.296360858145912, 7.602888282754072, -2.5408114197708045]}
-          object-quaternion={[-0.15018883631347407, 0.7605195283570814, 0.18954838335570479, 0.6025983494846013]}
-          target={[0, 0, 0]}></OrbitControls>
+        {/* <Log></Log> */}
+
+        {/**/}
         {/* <Logo scale={0.5} route='/blob' position-y={-1} /> */}
       </group>
     </>
   )
 }
+
 function Log() {
   useFrame((st) => {
     console.log(st.camera.position.toArray(), 'pos')
@@ -307,3 +270,66 @@ function Log() {
 export async function getStaticProps() {
   return { props: { title: 'AGAPE x Manifold' } }
 }
+
+/*
+<button
+            className='p-3 px-5 mx-3 text-white bg-blue-500 rounded-lg'
+            onClick={() => {
+              //
+              let input = document.createElement('input')
+              input.type = 'file'
+              input.onchange = (ev) => {
+                let first = ev.target?.files[0]
+
+                if (first) {
+                  let url = URL.createObjectURL(first)
+                  nProgress.start()
+                  let plyLoader = new PLYLoader()
+                  plyLoader
+                    .loadAsync(`${url}`, (ev) => {
+                      nProgress.set((ev.loaded / ev.total) * 0.8)
+                      // useWow.setState({ progress: ev.loaded / ev.total })
+                    })
+                    .then((ply) => {
+                      //
+
+                      ply = getNewPLY(ply)
+                      let o3d = new Object3D()
+
+                      let meshBasic = new MeshBasicMaterial({
+                        vertexColors: true,
+                      })
+
+                      let mesh = new Points(ply, meshBasic)
+                      mesh.rotation.x = Math.PI * -0.5
+                      o3d.add(mesh)
+                      hookWow.setState({ ply: <primitive object={o3d}></primitive> })
+
+                      let exporter = new PLYExporter()
+                      exporter.parse(
+                        mesh,
+                        (binary) => {
+                          console.log(binary)
+                          let blo = new Blob([binary], { type: '' })
+
+                          let url2 = URL.createObjectURL(blo)
+
+                          let an = document.createElement('a')
+                          an.href = url2
+                          an.download = 'reduced.glb'
+                          an.click()
+
+                          nProgress.done()
+                        },
+                        // () => {},
+                        { binary: true, excludeAttributes: ['normal'] },
+                      )
+                    })
+                  //
+                }
+              }
+              input.click()
+            }}>
+            Reduce PLY File
+          </button>
+*/
