@@ -129,10 +129,6 @@ export function Walker({ initPos = [1, 0, -1] }) {
         return s.default
       })
       .then(async (nip) => {
-        document.querySelector('#avacontrols')?.remove()
-        core.onClean(() => {
-          document.querySelector('#avacontrols')?.remove()
-        })
         let zone = document.createElement('div')
         zone.id = 'avacontrols'
         document.body.appendChild(zone)
