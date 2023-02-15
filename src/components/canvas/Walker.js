@@ -75,6 +75,7 @@ export function Walker({ initPos = [1, 0, -1] }) {
 
         if (self.keyState.joyStickDown) {
           //.
+          avaGLB.scene.rotation.y = controls.getAzimuthalAngle() + Math.PI
         } else if (ControlState.keyForward) {
           avaGLB.scene.rotation.y = MathUtils.damp(
             avaGLB.scene.rotation.y,
@@ -325,7 +326,7 @@ export function Walker({ initPos = [1, 0, -1] }) {
               }
 
               //
-              self.keyState.joyStickAngle = data.angle.radian + Math.PI * 1.5
+              // self.keyState.joyStickAngle = data.angle.radian + Math.PI * 1.5
             }
 
             if (evta.type === 'end') {
@@ -373,7 +374,6 @@ export function Walker({ initPos = [1, 0, -1] }) {
       camera.position.y = y
 
       player.position.addScaledVector(tempVector, playerSpeed * delta * self.keyState.joyStickPressure * 0.75)
-      avaGLB.scene.rotation.y = self.keyState.joyStickAngle + Math.PI + controls.getAzimuthalAngle()
     }
   })
 
