@@ -113,13 +113,11 @@ export default function Page(props) {
             </button>
           )} */}
 
-      <div id='avacontrols'></div>
-      <Loader></Loader>
-
       <Scene>
         <Walker initPos={[5.3280000000447, 2.1, 5]}></Walker>
         <Building></Building>
       </Scene>
+      <div id='avacontrols'></div>
     </>
   )
 } //defaultGeo
