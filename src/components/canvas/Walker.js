@@ -393,7 +393,7 @@ export function Walker({ initPos = [1, 0, -1] }) {
         </group>,
         player,
       )}
-      <Environment preset='apartment'></Environment>
+      <Environment files={`/hdr/resting_place_2_1k.hdr`}></Environment>
       <primitive object={player}></primitive>
       <OrbitControls makeDefault args={[camera, gl.domElement]} enableRotate={true}></OrbitControls>
     </>
